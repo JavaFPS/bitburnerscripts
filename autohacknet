@@ -1,0 +1,79 @@
+/** @param {NS} ns */
+export async function main(ns) {
+
+      let hn = ns.hacknet;
+
+      const maxLevel = 200;
+      const maxRam = 64;
+      const maxCores = 16;
+      let cheapestUpgrade = { type: "", index: -1, cost: Infinity };
+
+      while (true) {
+            const newNodeCost = hn.getPurchaseNodeCost();
+            const needsUpgrades = [];
+            const nodes = hn.numNodes();
+            for (let i = 0; i < nodes; i++) { //THIS FOR LOOP CHECKS IF ANYTHING NEEDS UPGRADES || IF IT DOES PUT IT AT THE END OF NEEDUPGRADES ARRAY
+
+                  cheapestUpgrade = { type: "", index: -1, cost: Infinity };
+                  const nodeStats = hn.getNodeStats(i);
+
+                  if (nodeStats.level < maxLevel) {
+                        needsUpgrades.push({ type: "LEVEL", index: i, cost: hn.getLevelUpgradeCost(i, 1) });
+                  }
+                  if (nodeStats.ram < maxRam) {
+                        needsUpgrades.push({ type: "RAM", index: i, cost: hn.getRamUpgradeCost(i, 1) });
+                  }
+                  if (nodeStats.cores < maxCores) {
+                        needsUpgrades.push({ type: "CORE", index: i, cost: hn.getCoreUpgradeCost(i, 1) });
+                  }
+
+                  //THIS FINDS THE OVERALL CHEAPEST UPGRADE FOR A NODE
+                  const cheapestNodeUpgrade = needsUpgrades.reduce((min, upgrade) => (upgrade.cost < min.cost ? upgrade : min), { type: "", index: -1, cost: Infinity });
+
+                  if (cheapestNodeUpgrade.cost < cheapestUpgrade.cost) {
+                        cheapestUpgrade = cheapestNodeUpgrade;
+                  }
+            }
+
+            // IS A NEW NODE CHEAPER THAN UPGRADE?
+            if (newNodeCost < cheapestUpgrade.cost && ns.getServerMoneyAvailable('home') >= newNodeCost) {
+                  hn.purchaseNode();
+                  ns.tprint("Purchased a new node for cost: $" + newNodeCost);
+            } else {
+                  // IF NOT THEN PERFORM CHEAPEST UPGRADE BY 1 LEVEL
+                  switch (cheapestUpgrade.type) {
+                        case "LEVEL":
+                              if (ns.getServerMoneyAvailable('home') >= cheapestUpgrade.cost) {
+                                    hn.upgradeLevel(cheapestUpgrade.index, 1);
+                                    ns.print("Upgraded LEVEL to " + hn.getNodeStats(cheapestUpgrade.index).level + " for Node " + cheapestUpgrade.index + " for cost: $" + cheapestUpgrade.cost);
+                              } else {
+                                    ns.print("Not enough money to upgrade LEVEL for Node " + cheapestUpgrade.index + " so waiting for more");
+                                    ns.print(cheapestUpgrade.cost.toFixed(0) + " - Needed || Have - " + ns.getServerMoneyAvailable('home').toFixed(0))
+                                    await ns.sleep(120000)
+                              }
+                              break;
+                        case "RAM":
+                              if (ns.getServerMoneyAvailable('home') >= cheapestUpgrade.cost) {
+                                    hn.upgradeRam(cheapestUpgrade.index, 1);
+                                    ns.print("Upgraded RAM to " + hn.getNodeStats(cheapestUpgrade.index).ram + " for Node " + cheapestUpgrade.index + " for cost: $" + cheapestUpgrade.cost);
+                              } else {
+                                    ns.print("Not enough money to upgrade RAM for Node " + cheapestUpgrade.index + " so waiting for more");
+                                    ns.print(cheapestUpgrade.cost.toFixed(0) + " - Needed || Have - " + ns.getServerMoneyAvailable('home').toFixed(0))
+                                    await ns.sleep(120000)
+                              }
+                              break;
+                        case "CORE":
+                              if (ns.getServerMoneyAvailable('home') >= cheapestUpgrade.cost) {
+                                    hn.upgradeCore(cheapestUpgrade.index, 1);
+                                    ns.print("Upgraded CORES to " + hn.getNodeStats(cheapestUpgrade.index).cores + " for Node " + cheapestUpgrade.index + " for cost: $" + cheapestUpgrade.cost);
+                              } else {
+                                    ns.print("Not enough money to upgrade CORE for Node " + cheapestUpgrade.index + " so waiting for more");
+                                    ns.print(cheapestUpgrade.cost.toFixed(0) + " - Needed || Have - " + ns.getServerMoneyAvailable('home').toFixed(0))
+                                    await ns.sleep(120000)
+                              }
+                              break;
+                  }
+            }
+            await ns.sleep(200)
+      }
+}
