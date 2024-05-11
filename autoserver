@@ -1,0 +1,100 @@
+/** @param {NS} ns */
+export async function main(ns) {
+      let keepGoing = 1;
+      let newServer = null;
+      let purchasedServers = (ns.getPurchasedServers());
+      let purchasedServersAfter = (ns.getPurchasedServers());
+      let serversTotal = purchasedServers.length;
+      let ramLevel = 1024;
+      let upgradeCost = ns.getPurchasedServerCost(ramLevel)
+      while (keepGoing == 1) {            // Keeps purchasing till it has 25 servers with minimum of 1024GB RAM
+
+            await ns.sleep(500);
+            let lowestRamServer = findLowestRamServer(ns, purchasedServers)
+
+            while (serversTotal >= 25 && (ns.getServerMoneyAvailable('home') < upgradeCost)) { await ns.sleep(10000) }
+
+            if (serversTotal >= 25 && (ns.getServerMoneyAvailable('home') > upgradeCost)) {
+
+                  let serversAtThisLevel = purchasedServers.filter(server => ns.getServerMaxRam(server) >= ramLevel)
+
+
+                  if (serversAtThisLevel.length >= 25) {
+                        ramLevel = ramLevel * 2;
+                        upgradeCost = ns.getPurchasedServerCost(ramLevel);
+                  }
+                  if (lowestRamServer !== null) {
+                        ns.killall(lowestRamServer);
+                        ns.upgradePurchasedServer(lowestRamServer, ramLevel)
+                        ns.print("Upgraded " + lowestRamServer + " for " + upgradeCost);
+                        ns.tprint(lowestRamServer + " upgraded to " + ramLevel + "GB RAM");
+                        newServer = lowestRamServer;
+                  }
+
+                  //delete lowest ram server
+                  //buy new server with double ram
+            }
+
+            if (serversTotal < 25 && (ns.getServerMoneyAvailable('home')) >= ns.getPurchasedServerCost(1024)) {
+                  if (ns.getServerMoneyAvailable('home') < ns.getPurchasedServerCost(1024)) {
+                        ns.print("Not enough money - " + ns.getServerMoneyAvailable('home') + " / " + ns.getPurchasedServerCost(1024));
+                        await ns.sleep(5000);
+                  }
+
+                  else {
+                        ns.purchaseServer('silo', 1024);
+                        purchasedServersAfter = ns.getPurchasedServers();
+                        newServer = findNewServer(purchasedServers, purchasedServersAfter)
+                        ns.tprint("Built a new silo - " + newServer);
+                  }
+            }
+
+
+            if (newServer !== null) {
+                  serversTotal++
+                  const thread = Math.floor(ns.getServerMaxRam(newServer) / (ns.getScriptRam('weakenall.js')));
+                  ns.scp('hostnames.txt', newServer);
+                  ns.scp('weakenall.js', newServer);
+                  ns.exec('weakenall.js', newServer, thread);
+                  ns.tprint(newServer + " is now destroying immune systems");
+                  newServer = null;
+            }
+
+
+
+            if (serversTotal >= 25 && (ns.getServerMaxRam(lowestRamServer) == ns.getPurchasedServerMaxRam())) {
+                  ns.tprint("Max Silo Memory Reached")
+                  break;
+            }
+
+            await ns.sleep(500);
+            purchasedServers = purchasedServersAfter;
+      }
+      ns.print("FINISHED RUNNING WOMB");
+            await ns.sleep(500);
+}
+
+
+
+
+function findNewServer(before, after) {
+      for (let i = 0; i < after.length; i++) {
+            if (before.indexOf(after[i]) === -1) {
+                  return after[i];
+            }
+      }
+      return null;
+}
+
+function findLowestRamServer(ns, servers) {
+      let lowestRam = 1048576;
+      let lowestRamServer = null;
+      for (let server of servers) {
+            let serverRam = ns.getServerMaxRam(server);
+            if (serverRam < lowestRam) {
+                  lowestRam = serverRam;
+                  lowestRamServer = server;
+            }
+      }
+      return lowestRamServer;
+}
