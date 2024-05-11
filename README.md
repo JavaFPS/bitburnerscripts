@@ -30,13 +30,3 @@ Contributions to this repository are welcome! If you have developed your own scr
 ## Disclaimer
 
 These scripts are provided as-is and may require adjustments to fit your specific gameplay style and progression level. Use them responsibly and at your own risk.
-
-## Credits
-
-Credit to the Bitburner community for inspiration, ideas, and contributions to the development of these scripts.
-
-## License
-
-This repository is licensed under the [MIT License](LICENSE), which means you are free to use, modify, and distribute the scripts as long as you include the original license and copyright notice.
-
-Happy hacking! If you have any questions or feedback, feel free to open an issue or reach out to me directly.
